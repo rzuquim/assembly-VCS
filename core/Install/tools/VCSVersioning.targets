@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <Target Name="ApplyVersionControl" AfterTargets="BeforeBuild" Condition="$(Configuration) != 'Debug'">
+    	<PropertyGroup>
+    		<ApplyCVSVersioning Condition="'$(ApplyCVSVersioning)'==''">$(MSBuildThisFileDirectory)applyVCSVersioning.ps1</ApplyCVSVersioning>
+    	</PropertyGroup>
+
+    	<Message Importance="high" Text="Updating assembly version"></Message>
+    	<Exec Command="powershell -NonInteractive -ExecutionPolicy UnRestricted -file $(ApplyCVSVersioning) -project $(ProjectDir)" LogStandardErrorAsError="true" ContinueOnError="false"/>
+    </Target>
+
+    <Target Name="RollbackVersionControl" AfterTargets="AfterBuild" Condition="$(Configuration) != 'Debug'">
+    	<PropertyGroup>
+    		<RollbackCVSVersioning Condition="'$(RollbackCVSVersioning)'==''">$(MSBuildThisFileDirectory)rollbackVCSVersioning.ps1</RollbackCVSVersioning>
+    	</PropertyGroup>
+
+    	<Message Importance="high" Text="Rolling back assembly changes..."></Message>
+    	<Exec Command="powershell -NonInteractive -ExecutionPolicy UnRestricted -file $(RollbackCVSVersioning) -project $(ProjectDir)" LogStandardErrorAsError="true" ContinueOnError="false"/>
+    </Target>
+</Project>
