@@ -23,11 +23,11 @@ $pointRelease = -1
 # —-----— SVN —-------
 if ($revision.Contains('fatal')) {
     Write-Host 'Labeling with svn revision: ' $revision
-    $revision = svn info | select-string "^revision" | foreach {$_.line.split(":")[1].trim()}
+    $revision = svn info | select-string "^Last Changed Rev" | foreach {$_.line.split(":")[1].trim()}
     $pointRelease =  [int]$revision
     Write-Host $revision
 } else {
-    Write-Host 'Labeling with git revision: ' $revision    
+    Write-Host 'Labeling with git revision: ' $revision
 }
 
 if (-not $revision) {
@@ -51,7 +51,7 @@ foreach ($line in $content) {
     if ($line -match $informationalPattern) {
         $informationalFound = $true
         $currentRevision = [string]$matches[1]
-        
+
         if($currentRevision -ne $revision) {
             $line = $updatedInformational
             $isVersionUpdate = $true
@@ -74,10 +74,10 @@ if ($isVersionUpdate -and $pointRelease -ge 0) {
 
         if ($line -match $versionPattern) {
             $semanticVersion = [string]$matches[1]
-            
+
             $message = 'Updating version of {0} to point-release {1}' -f $semanticVersion, $pointRelease
             $newAssemblyInfo[$i] = $updateVersion -f $semanticVersion, $pointRelease
-            
+
         } elseif ($line -match $fileVersionPattern) {
             $semanticVersion = [string]$matches[1]
             $message = 'Updating file version of {0} to point-release {1}' -f $semanticVersion, $pointRelease
