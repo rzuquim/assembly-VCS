@@ -24,7 +24,17 @@ $pointRelease = -1
 if ($revision.Contains('fatal')) {
     Write-Host 'Labeling with svn revision: ' $revision
     $revision = svn info | select-string "^Last Changed Rev" | foreach {$_.line.split(":")[1].trim()}
-    $pointRelease =  [int]$revision
+    for ($i = 0; $i -lt 5; $i++) {
+        if (Test-Path '.svn') {
+            $revision = svn info | select-string "^Last Changed Rev" | foreach {$_.line.split(":")[1].trim()}
+            break
+        }
+        Push-Location ..
+    }
+    for (; $i -gt 0; $i--) {
+        Pop-Location
+    }
+    $pointRelease = [int]$revision
     Write-Host $revision
 } else {
     Write-Host 'Labeling with git revision: ' $revision
