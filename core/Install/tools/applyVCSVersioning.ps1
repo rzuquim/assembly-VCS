@@ -1,4 +1,4 @@
-
+# <yyMMdd-commit>-<início do hash do commit>@<branch do commit se não master>
 # strongly based on: https://gist.githubusercontent.com/virtualdreams/3949d80ac61590160159/raw/34633b9761e3b18352ad0a76ae520766edb3f02f/git-hash.ps1
 param
 (
@@ -16,17 +16,26 @@ if (!$assemblyInfo -or !(Test-Path $assemblyInfo)) {
 # --------- backup copy --------
 copy $assemblyInfo ($assemblyInfo + '.bkp') -force
 
-# --------- GIT ---------
-$revision = git rev-parse HEAD 2>&1 | %{ "$_" } #doidera
-$pointRelease = -1
 
-# —-----— SVN —-------
-if ($revision.Contains('fatal')) {
-    Write-Host 'Labeling with svn revision: ' $revision
-    $revision = svn info | select-string "^Last Changed Rev" | foreach {$_.line.split(":")[1].trim()}
+$label = ""
+$labelBranch = ""
+# --------- GIT ---------
+$revision = git rev-parse HEAD 2>&1 | %{ "$_".substring(0, 8) }
+
+if (-not $revision.Contains('fatal')) {
+    $revisionDate = git show -s --format=%cd --date=format:%y%m%d HEAD
+    $branch = git rev-parse --abbrev-ref HEAD
+    if($branch -ne "master") 
+        {$labelBranch = $branch}
+    $pointRelease = -1
+    Write-Host 'Labeling with git'
+} else {
+    # —-----— SVN —-------
     for ($i = 0; $i -lt 5; $i++) {
         if (Test-Path '.svn') {
             $revision = svn info | select-string "^Last Changed Rev" | foreach {$_.line.split(":")[1].trim()}
+            $rawDate = svn info | select-string "^Last Changed Date" | foreach {$_.line.split(":")[1].split(" ")[1].trim()}
+            $revisionDate = $rawDate | Get-Date -Format "yyMMdd"
             break
         }
         Push-Location ..
@@ -35,9 +44,7 @@ if ($revision.Contains('fatal')) {
         Pop-Location
     }
     $pointRelease = [int]$revision
-    Write-Host $revision
-} else {
-    Write-Host 'Labeling with git revision: ' $revision
+    Write-Host 'Labeling with svn'
 }
 
 if (-not $revision) {
@@ -45,12 +52,18 @@ if (-not $revision) {
     exit 1
 }
 
+$label = "{0}-{1}" -f ($revisionDate, $revision)
+if($labelBranch -ne "") {
+    $label += "@{0}" -f $labelBranch
+}
+Write-Host 'Labeling as' $label
+
 # ----- WRITING FILE ------
 $content = Get-Content $assemblyInfo -Encoding UTF8
 
 $newAssemblyInfo = @()
 
-$updatedInformational = "[assembly: AssemblyInformationalVersion(""{0}"")]" -f $revision
+$updatedInformational = "[assembly: AssemblyInformationalVersion(""{0}"")]" -f $label
 $informationalPattern = "\[assembly: AssemblyInformationalVersion\(""(.*)""\)\]"
 
 $informationalFound = $false
@@ -62,10 +75,10 @@ foreach ($line in $content) {
         $informationalFound = $true
         $currentRevision = [string]$matches[1]
 
-        if($currentRevision -ne $revision) {
+        if($currentRevision -ne $label) {
             $line = $updatedInformational
             $isVersionUpdate = $true
-            Write-Host 'Hash updated to: ' $revision
+            Write-Host 'Hash updated to: ' $label
         }
     }
     $newAssemblyInfo += [Array]$line
@@ -97,7 +110,7 @@ if ($isVersionUpdate -and $pointRelease -ge 0) {
 }
 
 if ($informationalFound -eq $false) {
-    Write-Host 'Appending revision number: ' $revision
+    Write-Host 'Appending revision number: ' $label
     $newAssemblyInfo += [Array]$updatedInformational
 }
 
