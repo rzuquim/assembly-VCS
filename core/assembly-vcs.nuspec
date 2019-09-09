@@ -4,7 +4,7 @@
         <id>assembly-VCS</id>
         <title>assembly-VCS</title>
         <authors>rzuquim</authors>
-        <version>0.0.0.5</version>
+        <version>0.0.0.6</version>
         <projectUrl>https://github.com/rzuquim/assembly-VCS</projectUrl>
         <iconUrl>http://nuget.inoa.com.br/inoa.logo.jpg</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
