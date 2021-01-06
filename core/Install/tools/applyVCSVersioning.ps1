@@ -25,7 +25,7 @@ $revision = git rev-parse HEAD 2>&1 | %{ "$_".substring(0, 8) }
 if (-not $revision.Contains('fatal')) {
     $revisionDate = git show -s --format=%cd --date=format:%y%m%d HEAD
     $branch = git rev-parse --abbrev-ref HEAD
-    if($branch -ne "master") 
+    if($branch -ne "master" -and $branch -ne "main" -and $branch -ne "develop" -and $branch -ne "stable" -and $branch -ne "latest") 
         {$labelBranch = $branch}
     $pointRelease = -1
     Write-Host 'Labeling with git'
